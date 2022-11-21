@@ -1,7 +1,14 @@
 import { RequestHandler } from "express";
+import { validationResult } from "express-validator";
 
 export const register: RequestHandler = (req, res, next) => {
-  res.send("Register User");
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array().map((e) => e.msg) });
+  }
+
+  const { email, password } = req.body;
+  res.status(201).json({ email, password });
 };
 
 export const login: RequestHandler = (req, res, next) => {
