@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { validationResult } from "express-validator";
 import { PrismaClient } from "@prisma/client";
-import { hash } from "bcryptjs";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "./config";
 
@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 /**
  * @desc   Register user
- * @route  POST /api/v1/auth/register
+ * @route  POST /api/auth/register
  */
 export const register: RequestHandler = async (req, res, next) => {
   const errors = validationResult(req);
@@ -24,7 +24,7 @@ export const register: RequestHandler = async (req, res, next) => {
     return res.status(400).json({ errors: ["User already exists"] });
   }
 
-  const hashedPassword = await hash(password, 12);
+  const hashedPassword = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: { email, password: hashedPassword },
   });
@@ -35,8 +35,32 @@ export const register: RequestHandler = async (req, res, next) => {
   res.status(201).json({ user });
 };
 
-export const login: RequestHandler = (req, res, next) => {
-  res.send("Login User");
+/**
+ * @desc   Login user
+ * @route  POST /api/auth/login
+ */
+export const login: RequestHandler = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array().map((e) => e.msg) });
+  }
+
+  const { email, password } = req.body;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return res.status(400).json({ errors: ["Invalid credentials"] });
+  }
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    return res.status(400).json({ errors: ["Invalid credentials"] });
+  }
+
+  const token = jwt.sign({ id: user.id }, config.jwtSecret);
+  req.session = { jwt: token };
+
+  res.status(200).json({ user });
 };
 
 export const logout: RequestHandler = (req, res, next) => {

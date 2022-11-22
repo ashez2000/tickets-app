@@ -5,7 +5,7 @@ import * as schema from "./schema";
 const router = Router();
 
 router.post("/register", schema.registerSchema, auth.register);
-router.post("/login", auth.login);
+router.post("/login", schema.loginSchema, auth.login);
 router.post("/logout", auth.logout);
 router.get("/user", auth.user);
 
