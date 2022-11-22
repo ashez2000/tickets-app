@@ -63,10 +63,28 @@ export const login: RequestHandler = async (req, res, next) => {
   res.status(200).json({ user });
 };
 
+/**
+ * @desc   Logout user
+ * @route  POST /api/auth/logout
+ */
 export const logout: RequestHandler = (req, res, next) => {
   res.send("Logout User");
 };
 
-export const user: RequestHandler = (req, res, next) => {
-  res.send("Get User");
+/**
+ * @desc   Get user
+ * @route  GET /api/auth/user
+ */
+export const user: RequestHandler = async (req, res, next) => {
+  if (!req.session?.jwt) {
+    return res.status(401).json({ errors: ["Unauthorized"] });
+  }
+
+  const payload = jwt.verify(req.session.jwt, config.jwtSecret) as {
+    id: string;
+  };
+
+  const user = await prisma.user.findUnique({ where: { id: payload.id } });
+
+  res.status(200).json({ user });
 };
