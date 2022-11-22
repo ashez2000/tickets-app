@@ -1,20 +1,11 @@
-import express from "express";
-import cookieSession from "cookie-session";
-
-import router from "./router";
-import errorHandler from "./error-handler";
+import http from "http";
+import config from "./config";
+import app from "./app";
 
 async function main() {
-  const app = express();
-
-  app.use(cookieSession({ signed: false }));
-
-  app.use(express.json());
-  app.use("/api/auth", router);
-  app.use(errorHandler);
-
-  const server = app.listen(3000, () => {
-    console.log("Listening on port 3000!");
+  const server = http.createServer(app);
+  server.listen(config.port, () => {
+    console.log(`Listening on port ${config.port}`);
   });
 }
 
