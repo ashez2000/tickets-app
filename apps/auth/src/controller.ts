@@ -68,7 +68,8 @@ export const login: RequestHandler = async (req, res, next) => {
  * @route  POST /api/auth/logout
  */
 export const logout: RequestHandler = (req, res, next) => {
-  res.send("Logout User");
+  req.session = null;
+  res.status(200).json({ msg: "Logged out" });
 };
 
 /**
