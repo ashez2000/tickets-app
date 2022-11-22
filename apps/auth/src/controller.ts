@@ -2,6 +2,8 @@ import { RequestHandler } from "express";
 import { validationResult } from "express-validator";
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
+import jwt from "jsonwebtoken";
+import config from "./config";
 
 const prisma = new PrismaClient();
 
@@ -26,6 +28,9 @@ export const register: RequestHandler = async (req, res, next) => {
   const user = await prisma.user.create({
     data: { email, password: hashedPassword },
   });
+
+  const token = jwt.sign({ id: user.id }, config.jwtSecret);
+  req.session = { jwt: token };
 
   res.status(201).json({ user });
 };
