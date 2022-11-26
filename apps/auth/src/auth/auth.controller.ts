@@ -3,7 +3,9 @@ import { validationResult } from "express-validator";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
 import config from "../config";
+import * as authService from "./auth.service";
 
 const prisma = new PrismaClient();
 
@@ -19,19 +21,15 @@ export const register: RequestHandler = async (req, res, next) => {
 
   const { email, password } = req.body;
 
-  const exist = await prisma.user.findUnique({ where: { email } });
+  const exist = await authService.findUserByEmail(email);
   if (exist) {
     return res.status(400).json({ errors: ["User already exists"] });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({
-    data: { email, password: hashedPassword },
-  });
+  const user = await authService.createUser({ email, password });
+  const token = authService.generateJWT({ id: user.id });
 
-  const token = jwt.sign({ id: user.id }, config.jwtSecret);
   req.session = { jwt: token };
-
   res.status(201).json({ user });
 };
 
@@ -47,19 +45,19 @@ export const login: RequestHandler = async (req, res, next) => {
 
   const { email, password } = req.body;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await authService.findUserByEmail(email);
   if (!user) {
     return res.status(400).json({ errors: ["Invalid credentials"] });
   }
 
-  const valid = await bcrypt.compare(password, user.password);
+  const valid = await authService.comparePassword(password, user.password);
   if (!valid) {
     return res.status(400).json({ errors: ["Invalid credentials"] });
   }
 
-  const token = jwt.sign({ id: user.id }, config.jwtSecret);
-  req.session = { jwt: token };
+  const token = authService.generateJWT({ id: user.id });
 
+  req.session = { jwt: token };
   res.status(200).json({ user });
 };
 
@@ -81,11 +79,8 @@ export const user: RequestHandler = async (req, res, next) => {
     return res.status(401).json({ errors: ["Unauthorized"] });
   }
 
-  const payload = jwt.verify(req.session.jwt, config.jwtSecret) as {
-    id: string;
-  };
-
-  const user = await prisma.user.findUnique({ where: { id: payload.id } });
+  const payload = authService.verifyJWT(req.session.jwt);
+  const user = await authService.findUserById(payload.id);
 
   res.status(200).json({ user });
 };
