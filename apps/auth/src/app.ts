@@ -1,7 +1,7 @@
 import express from "express";
 import cookieSession from "cookie-session";
 
-import router from "./router";
+import router from "./auth/auth.router";
 import errorHandler from "./error-handler";
 
 const app = express();

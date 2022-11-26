@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as auth from "./controller";
-import * as schema from "./schema";
+import * as auth from "./auth.controller";
+import * as schema from "./auth.schema";
 
 const router = Router();
 

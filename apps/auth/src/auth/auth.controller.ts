@@ -3,7 +3,7 @@ import { validationResult } from "express-validator";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import config from "./config";
+import config from "../config";
 
 const prisma = new PrismaClient();
 
